@@ -26,7 +26,7 @@ const mention = `<@716390085896962058>`;
 const langOpts = [`english`, `french`, `german`, `japanese`];
 const languages = langOpts
   .map((x) => {
-    
+
     const raw = fs.readFileSync(`./data/langs/${x}.json`, `utf-8`);
     try {
       return JSON.parse(raw);
@@ -61,6 +61,7 @@ interface Pokemon {
   loggable: boolean;
 }
 
+let tokenCounter = 0;
 export class Crused {
   token: string;
   client = new Client({});
@@ -77,10 +78,12 @@ export class Crused {
     iv: 0,
     shiny: 0,
   };
+  count: number = ++tokenCounter;
   webhook: WebhookClient;
-  constructor(token: string, webhook: string) {
+  constructor(token: string, webhook: string, count?: number) {
     this.token = token;
     this.webhook = new WebhookClient({ url: webhook });
+    if (count) this.count = count;
   }
 
   login() {
@@ -125,7 +128,7 @@ export class Crused {
         collector.stop();
         if (msg.client.user && msg.content.includes(msg.client.user?.id)) {
           const pokemon = this.parsePokemon(msg.content);
-          console.log(pokemon);
+          //console.log(pokemon);
           this.stats.catches++;
           if (pokemon?.rarity.includes(`ev`)) this.stats.event++;
           if (pokemon?.rarity.includes(`leg`)) this.stats.legendary++;
@@ -137,6 +140,7 @@ export class Crused {
             this.logPokemon(pokemon, msg.url);
           }
           if (!pokemon) return;
+          Logger.logPokemon(pokemon, msg as any)
         }
       } else if (
         msg.embeds.length > 0 &&
@@ -187,8 +191,8 @@ export class Crused {
     const gender = name.includes("female")
       ? "female"
       : name.includes("male")
-      ? "male"
-      : "none";
+        ? "male"
+        : "none";
 
     let rarities: rarity[] = [];
     let loggable = false;
@@ -251,9 +255,9 @@ export class Crused {
 -  **Gender**‎ ‎ ‎  ※ ‎  ‎ ‎ ‎ ‎${pokemon.gender}
 -  **IV** ‎ ‎ ‎  ※ ‎  ‎ ‎ ‎ ‎${pokemon.iv}%
   ` +
-          "\n```\n" +
-          pokemon.rarity.map((x) => formats[x].repeat(8)).join("\n") +
-          "\n```",
+        "\n```\n" +
+        pokemon.rarity.map((x) => formats[x].repeat(8)).join("\n") +
+        "\n```",
       )
       .setURL(url)
       .setColor(2961203)
@@ -298,10 +302,16 @@ export class Crused {
     this.sending = false;
   }
 }
-const cruser = new Crused(
-  config.token,
-  config.webhook,
-);
 
-cruser.login();
-cruser.run();
+const tokens = fs.readFileSync(`./` + config.tokensFile, `utf-8`)?.split(`\n`).filter(x => x);
+
+for (let i = 0; i < tokens.length; i++) {
+  const cruser = new Crused(
+    tokens[i],
+    config.webhook,
+    i
+  );
+
+  cruser.login();
+  cruser.run();
+}

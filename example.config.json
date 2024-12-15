@@ -1,5 +1,6 @@
 {
     "autocatch": true,
     "token": "",
-    "webhook": ""
+    "webhook": "",
+    "tokensFile": "tokens.txt"
 }
