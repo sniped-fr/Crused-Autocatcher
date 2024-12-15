@@ -2,14 +2,13 @@ import chalk from "chalk";
 import moment from "moment";
 import blessed from 'blessed';
 import figlet from "figlet"
-// Create a screen object
 const screen = blessed.screen({
   smartCSR: true,
   title: 'Terminal Interface Example',
 });
 
 const title = figlet.textSync('Crused', {
-  font: 'Slant', // Try fonts like "Standard", "Big", "Block", etc.
+  font: 'Slant',
   horizontalLayout: 'default',
   verticalLayout: 'default',
 });
@@ -19,57 +18,53 @@ const titleBox = blessed.box({
   top: 0,
   left: 'center',
   width: '100%',
-  height: `20%`, // Adjust for title height
-  content: chalk.yellow.bold(title), // Add color with chalk
+  height: `20%`,
+  content: chalk.magenta.bold(title),
   align: 'center',
   valign: 'middle',
-  tags: true, // Allows for color and formatting
+  tags: true,
   style: {
-    fg: 'yellow',
+    fg: 'purple',
   },
 });
-// Create a box for error logs
 const errorLogBox = blessed.box({
   top: `20%`,
   left: `30%`,
   width: '70%',
   height: '40%',
-  label: 'Logs',
+  label: chalk.magenta(`Logs`),
   border: { type: 'line' },
-  style: { border: { fg: 'magenta' } },
+  style: { border: { fg: '#a800e6' } },
   scrollable: true,
   alwaysScroll: true,
   scrollbar: { ch: '|' },
-  mouse: true, // Enable mouse support
+  mouse: true,
 });
 
-// Create a box for basic logs
 const basicLogBox = blessed.box({
   top: '60%',
   left: 0,
   width: '70%',
   height: '40%',
-  label: 'Basic Logs',
+  label: 'Pokémons',
   border: { type: 'line' },
   style: { border: { fg: 'green' } },
   scrollable: true,
   alwaysScroll: true,
   scrollbar: { ch: '|' },
-  mouse: true, // Enable mouse support
+  mouse: true,
 });
 
-// Create a box for stats
 const statsBox = blessed.box({
   top: `20%`,
   left: 0,
   width: '30%',
   height: '40%',
-  label: 'Stats',
+  label: chalk.cyan('Stats'),
   border: { type: 'line' },
   style: { border: { fg: 'blue' } },
 });
 
-// Create a box for other details
 const otherDetailsBox = blessed.box({
   top: '60%',
   left: '70%',
@@ -80,52 +75,44 @@ const otherDetailsBox = blessed.box({
   style: { border: { fg: 'yellow' } },
 });
 
-// Append boxes to the screen
 screen.append(titleBox)
 screen.append(errorLogBox);
 screen.append(basicLogBox);
 screen.append(statsBox);
 screen.append(otherDetailsBox);
 
-// Add content to the boxes
-errorLogBox.setContent('Error logs will appear here...');
-basicLogBox.setContent('Basic logs will appear here...');
-statsBox.setContent('Stats will appear here...');
+//errorLogBox.setContent('Error logs will appear here...');
+basicLogBox.setContent('Soon...');
+statsBox.setContent('Stats will load soon...');
 otherDetailsBox.setContent('Other details will appear here...');
 
-// Automatically scroll to bottom when new content is added
-function scrollToBottom(box:any) {
-  box.setScrollPerc(100); // Set scroll position to 100% (bottom)
-  screen.render(); // Re-render the screen to reflect the update
+function scrollToBottom(box: any) {
+  box.setScrollPerc(100);
+  screen.render();
 }
 
-// Allow mouse scrolling
 errorLogBox.on('mouse', (data) => {
-  if (data.action === 'wheelup') errorLogBox.scroll(-1); // Scroll up
-  if (data.action === 'wheeldown') errorLogBox.scroll(1); // Scroll down
+  if (data.action === 'wheelup') errorLogBox.scroll(-1); 
+  if (data.action === 'wheeldown') errorLogBox.scroll(1);
 });
 
 basicLogBox.on('mouse', (data) => {
-  if (data.action === 'wheelup') basicLogBox.scroll(-1); // Scroll up
-  if (data.action === 'wheeldown') basicLogBox.scroll(1); // Scroll down
+  if (data.action === 'wheelup') basicLogBox.scroll(-1); 
+  if (data.action === 'wheeldown') basicLogBox.scroll(1);
 });
 
-// Allow exiting the program with 'q' or 'Ctrl+C'
 screen.key(['q', 'C-c'], () => process.exit(0));
 
-// Example: Dynamically update boxes
 setInterval(() => {
-  errorLogBox.insertBottom(`Error: ${Math.random()}`);
-  basicLogBox.insertBottom(`Log: ${Math.random()}`);
-  statsBox.setContent(`Stats:\nCPU: ${Math.random().toFixed(2)}%\nRAM: ${Math.random().toFixed(2)}GB`);
+//  errorLogBox.insertBottom(`Error: ${Math.random()}`);
+  //basicLogBox.insertBottom(`Log: ${Math.random()}`);
+  //statsBox.setContent(`Stats:\nCPU: ${Math.random().toFixed(2)}%\nRAM: ${Math.random().toFixed(2)}GB`);
   otherDetailsBox.setContent(`Details:\nTime: ${new Date().toLocaleTimeString()}`);
-  
-  // Auto-scroll to the bottom for log boxes
+
   scrollToBottom(errorLogBox);
   scrollToBottom(basicLogBox);
 }, 1000);
 
-// Render the screen
 screen.render();
 export class Logger {
   private static getTimestamp(): string {
@@ -165,12 +152,14 @@ export class Logger {
     } else {
       formattedMessage = message;
     }
-
-    console.log(
+    errorLogBox.insertBottom(colorFn(
+      `[${level}]`.padStart(9, ` `) + ` [${timestamp}] - ${formattedMessage}`
+    ))
+    /*console.log(
       colorFn(
         `[${level}]`.padStart(9, ` `) + ` [${timestamp}] - ${formattedMessage}`
       )
-    );
+    );*/
   }
 }
 
@@ -188,7 +177,7 @@ export function capitalize(str: string) {
   return str.charAt(0).toUpperCase() + str.substring(1);
 }
 
-export function randomBin<T>(array:T[]) { 
+export function randomBin<T>(array: T[]) {
   return array[Math.round(Math.random())];
 }
 
