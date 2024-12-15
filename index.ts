@@ -3,31 +3,31 @@ import {
   MessageEmbed,
   TextChannel,
   WebhookClient,
-} from "npm:discord.js-selfbot-v13";
+} from "discord.js-selfbot-v13";
+import fs from "fs"
 
-import { Logger, randomBin, randomItem } from "./structs/utils.ts";
-import config from "./config.json" with { type: "json" };
-import colors from "npm:colors";
+import { Logger, randomBin, randomItem } from "./structs/utils.js";
+import config from "./config.json"
 import { setTimeout as wait } from "node:timers/promises";
-import { solveHint } from "./structs/pokemon.ts";
-colors;
+import { solveHint } from "./structs/pokemon.js";
 
-import leg from "./data/names/legendary.json" with { type: "json" };
-import myth from "./data/names/mythical.json" with { type: "json" };
-import ubs from "./data/names/ultra-beast.json" with { type: "json" };
-import reg from "./data/names/regional.json" with { type: "json" };
-import evs from "./data/names/event.json" with { type: "json" };
+import leg from "./data/names/legendary.json"
+import myth from "./data/names/mythical.json"
+import ubs from "./data/names/ultra-beast.json"
+import reg from "./data/names/regional.json"
+import evs from "./data/names/event.json"
 
-import evImages from "./data/images/events.json" with { type: "json" };
-import fmImages from "./data/images/forms.json" with { type: "json" };
-import alImages from "./data/images/images.json" with { type: "json" };
+import evImages from "./data/images/events.json"
+import fmImages from "./data/images/forms.json"
+import alImages from "./data/images/images.json"
 const poketwo = [`716390085896962058`];
 const mention = `<@716390085896962058>`;
 
 const langOpts = [`english`, `french`, `german`, `japanese`];
 const languages = langOpts
   .map((x) => {
-    const raw = Deno.readTextFileSync(`./data/langs/${x}.json`);
+    
+    const raw = fs.readFileSync(`./data/langs/${x}.json`, `utf-8`);
     try {
       return JSON.parse(raw);
     } catch (_) {
@@ -86,7 +86,7 @@ export class Crused {
   login() {
     Logger.info(`Logging in...`);
     this.client.on("ready", () => {
-      Logger.success(`Logged in as ${this.client?.user?.tag.blue}!`);
+      Logger.success(`Logged in as ${this.client?.user?.tag}!`);
     });
     this.client.login(this.token).catch(() => `Unable to login`);
   }

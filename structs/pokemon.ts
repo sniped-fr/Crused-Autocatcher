@@ -1,4 +1,4 @@
-import pokemon from "../data/pokemon.json" with { type: "json" };
+import pokemon from "../data/pokemon.json"
 
 export function solveHint(message: string): string[] {
   if (!message) return [];
