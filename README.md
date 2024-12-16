@@ -1,15 +1,16 @@
-# Crused Autocatcher
+# Crused Pokémon Autocatcher
 
-High paced Deno based Discord Poketwo autocatcher
+A free high end Discord Pokétwo autocatcher
+
 
 ---
 
 ## Prerequisites
 
-Before setting up **Crused Autocatcher**, make sure you have the following installed:
+Before setting up **Crused**, make sure you have the following installed:
 
-- **Deno**: The Deno runtime is required to run the project.
-  - Follow the installation guide on the official Deno website: [Deno Installation Guide](https://deno.land/#installation)
+- **Node.js**: The Node runtime is required to run the project.
+  - Follow the installation guide on the official Node.js website: [Node Installation Guide](https://nodejs.org/en/learn/getting-started/how-to-install-nodejs)
 
 ---
 
@@ -29,23 +30,26 @@ Navigate to the project directory:
 cd Crused-Autocatcher
 ```
 
-### Step 2: Configure the `config.json` File
+### Step 2: Configuration files
+- Rename `example.config.json` -> `config.json`
+- Create `tokens.txt`
+
+### Step 3: Configure the `config.json` File
 
 Before running the project, you'll need to configure the `config.json` file with the necessary settings for your environment.
 
 1. Open the `config.json` file in your project directory.
 2. Update the values as needed based on your preferences and environment.
 
-### Step 3: Running the Project
+### Step 4: Running the Project
 
 To start the project, you can use the following command:
 
 ```bash
-deno run --allow-all main.ts
+run.bat
 ```
 
 ---
-
 
 
 ## Contributing
