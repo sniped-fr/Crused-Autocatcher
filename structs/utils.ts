@@ -137,18 +137,16 @@ screen.append(otherDetailsBox);
 basicLogBox.setContent(chalk.grey('    Waiting for pokemons...'));
 
 function smoothScroll(box: any, delta: any) {
-  const step = Math.max(1, Math.floor(box.height / 5)); // Adjust scroll step dynamically
-  box.scroll(delta * step); // Scroll by calculated step
-  screen.render(); // Re-render the screen
+  const step = Math.max(1, Math.floor(box.height / 5)); 
+  box.scroll(delta * step); 
+  screen.render();
 }
 
-// Attach throttled scroll handlers
 const handleScroll = throttle((box, data) => {
   if (data.action === 'wheelup') smoothScroll(box, -1);
   if (data.action === 'wheeldown') smoothScroll(box, 1);
-}, 50); // Throttle to limit scroll event firing
+}, 50); 
 
-// Apply smooth scrolling to all scrollable boxes
 [basicLogBox, errorLogBox, otherDetailsBox].forEach((box) => {
   box.on('mouse', (data) => handleScroll(box, data));
 });
