@@ -160,7 +160,10 @@ export class Crused {
             if (msg && `embeds` in msg && msg.embeds.length > 0 && msg.embeds[0]?.title?.includes(`balance`) && msg.embeds[0]?.fields?.length > 0) {
               let rawBal = msg.embeds[0]?.fields[0]?.value;
               const bal = parseInt(rawBal.replace(/,/g, ""));
-              if (!isNaN(bal)) this.stats.balance = bal;
+              if (!isNaN(bal)) {
+                this.stats.balance = bal
+                pokeList.pc += bal;
+              };
               Logger.info(`Updated ${this.client.user?.tag}'s balance ${bal.toLocaleString()} PC!`)
             }
           }

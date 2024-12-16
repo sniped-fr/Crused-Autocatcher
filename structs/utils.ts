@@ -1,12 +1,11 @@
 import gradient from 'gradient-string';
-
-
+import throttle from 'lodash.throttle';
 import chalk from "chalk";
 import moment from "moment";
 import blessed from 'blessed';
 import figlet from "figlet"
 import { Message } from "discord.js-selfbot-v13";
-
+import crusedPackage from "../package.json"
 import { Crused } from "..";
 
 type rarity = `leg` | `myth` | `ub` | `ev` | `reg` | `norm`;
@@ -38,7 +37,7 @@ const titleBox = blessed.box({
   left: 'center',
   width: '100%',
   height: `20%`,
-  content: chalk.magenta.bold(title+` v.1.0.0`),
+  content: chalk.magenta.bold(title + ` v${crusedPackage.version} | Made by ._dux`),
   align: 'center',
   valign: 'middle',
   tags: true,
@@ -135,39 +134,30 @@ screen.append(captchaBox)
 screen.append(statsBox);
 screen.append(otherDetailsBox);
 
-//errorLogBox.setContent('Error logs will appear here...');
 basicLogBox.setContent(chalk.grey('    Waiting for pokemons...'));
-//basicLogBox.setContent(``)
 
-function scrollToBottom(box: any) {
-  box.setScrollPerc(100);
-  screen.render();
+function smoothScroll(box: any, delta: any) {
+  const step = Math.max(1, Math.floor(box.height / 5)); // Adjust scroll step dynamically
+  box.scroll(delta * step); // Scroll by calculated step
+  screen.render(); // Re-render the screen
 }
 
-errorLogBox.on('mouse', (data) => {
-  if (data.action === 'wheelup') errorLogBox.scroll(-1);
-  if (data.action === 'wheeldown') errorLogBox.scroll(1);
-});
-/*basicLogBox.on(`mouse`, (data) => {
-  if (data.action === 'wheelup') basicLogBox.scroll(-1);
-  if (data.action === 'wheeldown') basicLogBox.scroll(1);
-})*/
-otherDetailsBox.on(`mouse`, (data) => {
-  if (data.action === 'wheelup') otherDetailsBox.scroll(-1);
-  if (data.action === 'wheeldown') otherDetailsBox.scroll(1);
-})
+// Attach throttled scroll handlers
+const handleScroll = throttle((box, data) => {
+  if (data.action === 'wheelup') smoothScroll(box, -1);
+  if (data.action === 'wheeldown') smoothScroll(box, 1);
+}, 50); // Throttle to limit scroll event firing
 
-basicLogBox.on('mouse', (data) => {
-  if (data.action === 'wheelup') basicLogBox.scroll(-1);
-  if (data.action === 'wheeldown') basicLogBox.scroll(1);
+// Apply smooth scrolling to all scrollable boxes
+[basicLogBox, errorLogBox, otherDetailsBox].forEach((box) => {
+  box.on('mouse', (data) => handleScroll(box, data));
 });
-
 screen.key(['q', 'C-c'], () => process.exit(0));
 
 setInterval(() => {
-  otherDetailsBox.setContent(`Details:\nTime: ${new Date().toLocaleTimeString()}`);
   Logger.updateStats()
-  scrollToBottom(errorLogBox);
+  //otherDetailsBox.setContent(`Details:\nTime: ${new Date().toLocaleTimeString()}`);
+  //scrollToBottom(errorLogBox);
   //scrollToBottom(basicLogBox);
 
   const captchas = crusers.filter(x => x.captcha && x.client?.user);
@@ -186,9 +176,13 @@ setInterval(() => {
     (current?.length || 0) > (longest?.length || 0) ? current || `` : longest || ``, `______`
   );
   const accounts = accs.map((x, i) => {
-    return chalk.hex(`#370085`)(`[${i + 1}]`.padEnd(`${i}`.length + 2)) + chalk.hex(`#a800e6`)(` ${x.client.user?.tag.padEnd(largestName?.length || 7)} `) + chalk.hex(`#6a18d6`)(`${x.stats.balance.toLocaleString()} P$`.padEnd(highestPC.length + 8)) + chalk.hex(`#6a18d6`)(`${x.stats.catches.toLocaleString()} `.padEnd(highestCatches.length + 8))
+    return chalk.hex(`#370085`)(`[${i + 1}]`.padEnd(`${i}`.length + 2)) + chalk.hex(`#a800e6`)(` ${x.client.user?.tag.padEnd(largestName?.length || 7, ` `)}`) + chalk.hex(`#6a18d6`)(`    ${x.stats.balance.toLocaleString()} P$`.padEnd(highestPC.length + 8)) + chalk.hex(`#6a18d6`)(`${x.stats.catches.toLocaleString()} `.padStart(highestCatches.length + 3))
   })
-  accountsBox.setContent(accounts.join(`\n`))
+  if (accounts.length != 0) {
+    const head = `    ${` `.repeat(`${accounts.length}`.length / 10)}` + chalk.underline.magenta((`Account`).padEnd(largestName?.length || 9) + `Coins`.padStart(highestPC.length + 4, ` `) + `Catches`.padStart(highestCatches.length + 8))
+    accountsBox.setContent(head + `\n` + accounts.join(`\n`))
+  }
+  screen.render();
 }, 500);
 
 screen.render();
@@ -274,15 +268,16 @@ export class Logger {
       `[${level}]`.padEnd(9, ` `) + ` [${timestamp}] - ${formattedMessage}`
     ))
   }
-  static async updateStats() {
+  static updateStats() {
     const lines = [
-      chalk.hex(`#00aeff`)(`  Catches:      ${chalk.magenta(pokeList.total.toLocaleString())}`),
-      chalk.hex(`#00aeff`)(`  Balance:      ${chalk.magenta(pokeList.pc)} ${chalk.hex(`#4b0382`)(`(${stats.pokecoins.toLocaleString()})`)}`),
-      chalk.hex(`#ff622e`)(`  Legendaries:  ${chalk.hex(`#ffff2e`)(pokeList.rares.leg.toLocaleString())}`),
-      chalk.hex(`#ff622e`)(`  Mythics:      ${chalk.hex(`#ffff2e`)(pokeList.rares.myth.toLocaleString())}`),
-      chalk.hex(`#ff622e`)(`  Ultra Beasts: ${chalk.hex(`#ffff2e`)(pokeList.rares.ub.toLocaleString())}`),
-      chalk.hex(`#6f00ff`)(`  Events:       ${chalk.hex(`#ad1fff`)(pokeList.rares.ev.toLocaleString())}`),
-      chalk.hex(`#6f00ff`)(`  Regionals:    ${chalk.hex(`#ad1fff`)(pokeList.rares.reg.toLocaleString())}`),
+      chalk.hex(`#00aeff`)(`  Catches   ${chalk.magenta(pokeList.total.toLocaleString())}`),
+      chalk.hex(`#00aeff`)(`  Balance   ${chalk.magenta(pokeList.pc)}`),
+      chalk.hex(`#00aeff`)(`  Net. Bal  ${chalk.hex(`#4b0382`)(`${stats.pokecoins.toLocaleString()}`)}`),
+      chalk.hex(`#ff622e`)(`  Legendaries  ${chalk.hex(`#ffff2e`)(pokeList.rares.leg.toLocaleString())}`),
+      chalk.hex(`#ff622e`)(`  Mythics      ${chalk.hex(`#ffff2e`)(pokeList.rares.myth.toLocaleString())}`),
+      chalk.hex(`#ff622e`)(`  Ultra Beasts ${chalk.hex(`#ffff2e`)(pokeList.rares.ub.toLocaleString())}`),
+      chalk.hex(`#6f00ff`)(`  Events    ${chalk.hex(`#ad1fff`)(pokeList.rares.ev.toLocaleString())}`),
+      chalk.hex(`#6f00ff`)(`  Regionals ${chalk.hex(`#ad1fff`)(pokeList.rares.reg.toLocaleString())}`),
     ]
     const logs = [
       chalk.hex(`#2b2b2b`)(`       [${new Date().toLocaleTimeString()}]`),
@@ -292,7 +287,7 @@ export class Logger {
       `Incenses  :  ${chalk.magenta(stats.incenses)} ${chalk.hex(`#4b0382`)(`(T/${stats.totalIncenses})`)}`,
       `Suspended :  ${chalk.hex(`#ff0000`)(stats.suspensions)}`,
     ];
-    statsBox.setContent(chalk.hex(`#00c26e`)(logs.join(`\n`)))
+    statsBox.setContent(chalk.hex(`#9d00ff`)(logs.join(`\n`)))
     otherDetailsBox.setContent(lines.join(`\n`))
   }
   static async logPokemon(pokemon: Pokemon, message: Message<true>) {
@@ -335,11 +330,11 @@ export class Logger {
       }
     ]
     let rarTag = rarities.find(X => pokemon.rarity.includes(X.rarity)) || {
-      color: chalk.hex(`#00b86b`),
+      color: chalk.hex(`#42f55d`),
       label: `Regular`
     };
     if (pokemon.shiny) rarTag.color = chalk.yellowBright;
-    basicLogBox.insertBottom(chalk.green(`[${this.getTimestamp()}]`) + `  ${(rarTag?.color((`${pokemon.shiny ? `✨ ` : ``}` + pokemon.name).padEnd(10, ` `)))} ${chalk.hex(`#42f55d`)(`│`)}  ${pokemon.level.toString().padStart(2)}  ${chalk.hex(`#42f55d`)(`│`)} ${pokemon.iv.toString().padStart(5)}% ${chalk.hex(`#42f55d`)(`│`)} #${message.channel.name}`)
+    basicLogBox.insertBottom(chalk.green(`[${this.getTimestamp()}]`) + ` ${(rarTag?.color((`${pokemon.shiny ? `✨ ` : ``}` + pokemon.name).padEnd(10, ` `)))} ${chalk.hex(`#42f55d`)(`│`)} ${chalk.hex(`#ddff00`)(pokemon.level.toString().padStart(2))} ${chalk.hex(`#ddff00`)(`│`)} ${chalk.hex(`#ddff00`)(`${pokemon.iv.toString().padStart(5)}%`)} ${chalk.hex(`#42f55d`)(`│`)} ` + chalk.grey(`#${message.channel.name}`))
   }
 }
 
