@@ -1,12 +1,13 @@
 import {
   Client,
+  Message,
   MessageEmbed,
   TextChannel,
   WebhookClient,
 } from "discord.js-selfbot-v13";
 import fs from "fs"
 
-import { Logger, randomBin, randomItem } from "./structs/utils.js";
+import { crusers, Logger, pokeList, randomBin, randomItem, stats } from "./structs/utils.js";
 import config from "./config.json"
 import { setTimeout as wait } from "node:timers/promises";
 import { solveHint } from "./structs/pokemon.js";
@@ -20,6 +21,7 @@ import evs from "./data/names/event.json"
 import evImages from "./data/images/events.json"
 import fmImages from "./data/images/forms.json"
 import alImages from "./data/images/images.json"
+import path from "node:path";
 const poketwo = [`716390085896962058`];
 const mention = `<@716390085896962058>`;
 
@@ -77,6 +79,7 @@ export class Crused {
     event: 0,
     iv: 0,
     shiny: 0,
+    balance: 0
   };
   count: number = ++tokenCounter;
   webhook: WebhookClient;
@@ -88,8 +91,10 @@ export class Crused {
 
   login() {
     Logger.info(`Logging in...`);
+
     this.client.on("ready", () => {
       Logger.success(`Logged in as ${this.client?.user?.tag}!`);
+      stats.connected++;
     });
     this.client.login(this.token).catch(() => `Unable to login`);
   }
@@ -123,7 +128,7 @@ export class Crused {
       //filter: filter,
       time: 15_000,
     });
-    collector.on(`collect`, (msg) => {
+    collector.on(`collect`, async (msg) => {
       if (msg.content.startsWith(`Congratulations`)) {
         collector.stop();
         if (msg.client.user && msg.content.includes(msg.client.user?.id)) {
@@ -139,8 +144,26 @@ export class Crused {
           if (pokemon?.loggable) {
             this.logPokemon(pokemon, msg.url);
           }
-          if (!pokemon) return;
-          Logger.logPokemon(pokemon, msg as any)
+          if (pokemon)
+            Logger.logPokemon(pokemon, msg as any)
+          if (this.stats.catches == 1 && this.stats.balance == 0) {
+            await channel.send(`<@${poketwo[0]}> bal`);
+            const p2filter = (f: Message) =>
+              f.embeds && f.embeds.length > 0 && poketwo.includes(f.author.id);
+            let msg = (
+              await channel.awaitMessages({
+                filter: p2filter,
+                time: 2000,
+                max: 1,
+              })
+            ).first();
+            if (msg && `embeds` in msg && msg.embeds.length > 0 && msg.embeds[0]?.title?.includes(`balance`) && msg.embeds[0]?.fields?.length > 0) {
+              let rawBal = msg.embeds[0]?.fields[0]?.value;
+              const bal = parseInt(rawBal.replace(/,/g, ""));
+              if (!isNaN(bal)) this.stats.balance = bal;
+              Logger.info(`Updated ${this.client.user?.tag}'s balance ${bal.toLocaleString()} PC!`)
+            }
+          }
         }
       } else if (
         msg.embeds.length > 0 &&
@@ -303,7 +326,8 @@ export class Crused {
   }
 }
 
-const tokens = fs.readFileSync(`./` + config.tokensFile, `utf-8`)?.split(`\n`).filter(x => x);
+const tokens = fs.readFileSync(path.join(__dirname, `../`, config.tokensFile), `utf-8`)?.split(`\n`).filter(x => x);
+
 
 for (let i = 0; i < tokens.length; i++) {
   const cruser = new Crused(
@@ -311,7 +335,8 @@ for (let i = 0; i < tokens.length; i++) {
     config.webhook,
     i
   );
-
+  crusers.push(cruser)
+  stats.tokens++;
   cruser.login();
   cruser.run();
 }
