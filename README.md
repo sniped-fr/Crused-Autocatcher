@@ -4,7 +4,9 @@ A free high end Discord Pokétwo autocatcher
 
 
 ---
+![image](https://github.com/user-attachments/assets/87c37a15-2845-437f-a58c-f7c517b06b54)
 
+---
 ## Prerequisites
 
 Before setting up **Crused**, make sure you have the following installed:
