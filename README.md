@@ -30,24 +30,34 @@ Navigate to the project directory:
 cd Crused-Autocatcher
 ```
 
-### Step 2: Configuration files
+### Step 2: Installation
+Install the required packages
+```bash
+setup.bat
+```
+
+### Step 3: Configuration files
+> Run `setup.ts` directly after installing modules else follow below:
 - Rename `example.config.json` -> `config.json`
 - Create `tokens.txt`
 
-### Step 3: Configure the `config.json` File
+### Step 4: Configure the `config.json` File
 
-Before running the project, you'll need to configure the `config.json` file with the necessary settings for your environment.
+- Open the `config.json` and place in required fields.
+- Alternatively you can run `setup.ts`.
 
-1. Open the `config.json` file in your project directory.
-2. Update the values as needed based on your preferences and environment.
-
-### Step 4: Running the Project
+### Step 5: Running the Project
 
 To start the project, you can use the following command:
 
 ```bash
 run.bat
 ```
+> Alternatively you can run
+> ```bash
+> tsc
+> node dist/index.js
+> ```
 
 ---
 
