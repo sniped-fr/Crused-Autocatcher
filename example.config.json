@@ -4,5 +4,9 @@
     "webhook": "",
     "tokensFile": "tokens.txt",
     "captchaHook": "",
-    "captchaKey":""
+    "captchaKey":"",
+    "mode": "incense",
+    "incense": {
+        "atOnce": 4
+    }
 }

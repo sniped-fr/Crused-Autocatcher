@@ -147,6 +147,33 @@ export class Crused {
             message.react(`🙀`)
           }
         }
+        if (
+          message.content.includes(`You have completed the quest`) &&
+          !message.content.includes(`badge!`)
+        ) {
+          //You have completed the quest **Catch 500 pokémon originally found in the Paldea region.** and received **50,000** Pokécoins!
+          let x = message.content.split(" ");
+          let recIndex = x.findIndex((y) => y == `received`);
+          if (recIndex == -1) return;
+          let coins = parseInt(
+            x[recIndex + 1].replace(/,/g, "").replace(/\*/g, "")
+          );
+          if (!isNaN(coins)) {
+            pokeList.pc += coins;
+            this.stats.balance += coins;
+          }
+        }
+        if (message.content.includes(`You received`)) {
+          let x = message.content.split(" ");
+          let recIndex = x.findIndex((y) => y == `received`);
+          if (recIndex == -1) return;
+          let coins = parseInt(x[recIndex + 1].replace(/,/g, ""));
+          if (!isNaN(coins)) {
+            pokeList.pc += coins;
+            this.stats.balance += coins;
+          }
+        }
+
         if (message.embeds.length != 0 && message.embeds[0]?.title) {
           if (message.embeds[0].title.includes(`has appeared`)) {
             if (!config.autocatch || this.captcha) return;
@@ -170,6 +197,11 @@ export class Crused {
                     if (shards != 0) {
                       let purchased = await this.buyShards(shards, message.channel);
                       if (!purchased) Logger.error(`Shards not bought for ${this.client.user?.tag}!`)
+                      else {
+
+                        pokeList.pc -= shards;
+                        this.stats.balance += shards;
+                      }
                     }
                     this.buyIncense(message.guild);
                   }
@@ -312,6 +344,7 @@ export class Crused {
         collector.stop();
       } else if (msg.content.includes(`That is the`)) {
         if (tries == maxTries) return collector.stop();
+        if(!pokemons[tries]) return;
         const names = this.getNames(pokemons[tries]);
         names.push(pokemons[tries]);
         this.sendMessage(

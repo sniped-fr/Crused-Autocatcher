@@ -137,15 +137,15 @@ screen.append(otherDetailsBox);
 basicLogBox.setContent(chalk.grey('    Waiting for pokemons...'));
 
 function smoothScroll(box: any, delta: any) {
-  const step = Math.max(1, Math.floor(box.height / 5)); 
-  box.scroll(delta * step); 
+  const step = Math.max(1, Math.floor(box.height / 5));
+  box.scroll(delta * step);
   screen.render();
 }
 
 const handleScroll = throttle((box, data) => {
   if (data.action === 'wheelup') smoothScroll(box, -1);
   if (data.action === 'wheeldown') smoothScroll(box, 1);
-}, 50); 
+}, 50);
 
 [basicLogBox, errorLogBox, otherDetailsBox].forEach((box) => {
   box.on('mouse', (data) => handleScroll(box, data));
@@ -164,8 +164,12 @@ setInterval(() => {
     captchaBox.setContent(chalk.hex(`#fa3e77`)(`Live Captchas: ${capList.length}\n ${capList.join(`\n`)} `))
   } else captchaBox.setContent(chalk.redBright(`Live Captchas: 0`))
   const accs = crusers.filter(x => x.client.user)
+  let longest = 0;
+  accs.forEach(e => {
+    if(e.client?.user?.tag?.length || 0 > longest) longest = e.client.user?.tag?.length || 0
+  })
   const largestName = accs.map(x => x.client.user?.tag).filter(x => x && Array.isArray(x)).reduce((longest, current) =>
-    (current?.length || 0) > (longest?.length || 0) ? current || `` : longest || ``, `_______`
+    (current?.length || 0) > (longest?.length || 0) ? current || `` : longest || ``, `__________`
   );
   const highestPC = accs.map(x => x.stats.balance.toString()).filter(x => x && Array.isArray(x)).reduce((longest, current) =>
     (current?.length || 0) > (longest?.length || 0) ? current || `` : longest || ``, `______`
@@ -173,11 +177,12 @@ setInterval(() => {
   const highestCatches = accs.map(x => x.stats.catches.toString()).filter(x => x && Array.isArray(x)).reduce((longest, current) =>
     (current?.length || 0) > (longest?.length || 0) ? current || `` : longest || ``, `______`
   );
+
   const accounts = accs.map((x, i) => {
-    return chalk.hex(`#370085`)(`[${i + 1}]`.padEnd(`${i}`.length + 2)) + chalk.hex(`#a800e6`)(` ${x.client.user?.tag.padEnd(largestName?.length || 7, ` `)}`) + chalk.hex(`#6a18d6`)(`    ${x.stats.balance.toLocaleString()} P$`.padEnd(highestPC.length + 8)) + chalk.hex(`#6a18d6`)(`${x.stats.catches.toLocaleString()} `.padStart(highestCatches.length + 3))
+    return chalk.hex(`#370085`)(`[${i + 1}]`.padEnd(`${i}`.length + 2)) + chalk.hex(`#a800e6`)(` ${x.client.user?.tag.substring(0, Math.min(8, x.client?.user?.tag.length || 3)).padEnd(Math.min(longest, 8), ` `)}`) + chalk.hex(`#6a18d6`)(`    ${x.stats.balance.toLocaleString()} P$`.padEnd(highestPC.length + 8)) + chalk.hex(`#6a18d6`)(`${x.stats.catches.toLocaleString()} `.padStart(highestCatches.length + 3))
   })
   if (accounts.length != 0) {
-    const head = `    ${` `.repeat(`${accounts.length}`.length / 10)}` + chalk.underline.magenta((`Account`).padEnd(largestName?.length || 9) + `Coins`.padStart(highestPC.length + 4, ` `) + `Catches`.padStart(highestCatches.length + 8))
+    const head = `    ${` `.repeat(`${accounts.length}`.length / 10)}` + chalk.underline.magenta((`${largestName?.length} Account`).padEnd(Math.min(longest, 8), ` `) + `Coins`.padStart(highestPC.length + 4, ` `) + `Catches`.padStart(highestCatches.length + 8))
     accountsBox.setContent(head + `\n` + accounts.join(`\n`))
   }
   screen.render();
@@ -258,7 +263,7 @@ export class Logger {
     } else {
       formattedMessage = message;
     }
-    errorLogBox.insertBottom(colorFn(
+    errorLogBox.insertTop(colorFn(
       `[${level}]`.padEnd(6, ` `) + ` [${timestamp}] ${formattedMessage}`
     ))
   }
@@ -336,7 +341,7 @@ export class Logger {
       label: `Regular`
     };
     if (pokemon.shiny) rarTag.color = chalk.yellowBright;
-    basicLogBox.insertBottom(chalk.green(`[${this.getTimestamp()}]`) + ` ${(rarTag?.color((`${pokemon.shiny ? `✨ ` : ``}` + pokemon.name).padEnd(10, ` `)))} ${chalk.hex(`#42f55d`)(`│`)} ${chalk.hex(`#ddff00`)(pokemon.level.toString().padStart(2))} ${chalk.hex(`#ddff00`)(`│`)} ${chalk.hex(`#ddff00`)(`${pokemon.iv.toString().padStart(5)}%`)} ${chalk.hex(`#42f55d`)(`│`)} ` + chalk.grey(`#...${message.channel.name.substring(message.channel.name.length-4)}`))
+    basicLogBox.insertTop(chalk.green(`[${this.getTimestamp()}]`) + ` ${(rarTag?.color((`${pokemon.shiny ? `✨ ` : ``}` + pokemon.name).padEnd(10, ` `)))} ${chalk.hex(`#42f55d`)(`│`)} ${chalk.hex(`#ddff00`)(pokemon.level.toString().padStart(2))} ${chalk.hex(`#ddff00`)(`│`)} ${chalk.hex(`#ddff00`)(`${pokemon.iv.toString().padStart(5)}%`)} ${chalk.hex(`#42f55d`)(`│`)} ` + chalk.grey(`#...${message.channel.name.substring(message.channel.name.length - 4)}`))
   }
 }
 
