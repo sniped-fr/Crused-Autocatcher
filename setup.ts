@@ -7,6 +7,8 @@ interface Config {
     botToken: string;
     autocatch: boolean;
     tokenFile: string;
+    captchaHook: string;
+    captchaKey: string;
 }
 
 const rl = readline.createInterface({
@@ -30,13 +32,16 @@ const createConfigFile = async () => {
     }
     const webhook = await askQuestion('Enter webhook for catch logs: ');
     const botToken = await askQuestion('Enter token for discord bot: ');
-
+    const captchaHook = await askQuestion(`Enter a webhook to log captchas: `);
+    const captchaKey = await askQuestion(`Enter captcha key from https://poketwo.store\: `)
     const config: Config = {
         mode,
         webhook,
         botToken,
         autocatch: true,
-        tokenFile: `tokens.txt`
+        tokenFile: `tokens.txt`,
+        captchaHook,
+        captchaKey
     };
 
     fs.writeFileSync('config.json', JSON.stringify(config, null, 2), 'utf-8');

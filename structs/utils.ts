@@ -47,8 +47,8 @@ const titleBox = blessed.box({
 });
 const errorLogBox = blessed.box({
   top: `20%`,
-  left: `30%`,
-  width: '40%',
+  left: `25%`,
+  width: '45%',
   height: '40%',
   label: chalk.magenta(`Logs`),
   border: { type: 'line' },
@@ -102,7 +102,7 @@ const accountsBox = blessed.box({
 const statsBox = blessed.box({
   top: `20%`,
   left: 0,
-  width: '30%',
+  width: '25%',
   height: '40%',
   label: chalk.cyan('Stats'),
   border: { type: 'line' },
@@ -244,7 +244,7 @@ export class Logger {
     this.log("ERROR", message.join(" "), chalk.red);
   }
   public static success(message: string | object | any[]): void {
-    this.log("SUCCESS", message, chalk.green);
+    this.log("OK", message, chalk.green);
   }
   public static debug(message: string | object | any[]): void {
     this.log("DEBUG", message, chalk.yellow);
@@ -263,7 +263,7 @@ export class Logger {
       formattedMessage = message;
     }
     errorLogBox.insertBottom(colorFn(
-      `[${level}]`.padEnd(9, ` `) + ` [${timestamp}] - ${formattedMessage}`
+      `[${level}]`.padEnd(6, ` `) + ` [${timestamp}] - ${formattedMessage}`
     ))
   }
   static updateStats() {

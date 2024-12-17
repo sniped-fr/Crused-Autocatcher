@@ -2,5 +2,7 @@
     "autocatch": true,
     "token": "",
     "webhook": "",
-    "tokensFile": "tokens.txt"
+    "tokensFile": "tokens.txt",
+    "captchaHook": "",
+    "captchaKey":""
 }

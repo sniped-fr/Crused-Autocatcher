@@ -6,6 +6,7 @@ import {
   WebhookClient,
 } from "discord.js-selfbot-v13";
 import fs from "fs"
+import axios from 'axios';
 
 import { crusers, Logger, pokeList, randomBin, randomItem, stats } from "./structs/utils.js";
 import config from "./config.json"
@@ -22,6 +23,7 @@ import evImages from "./data/images/events.json"
 import fmImages from "./data/images/forms.json"
 import alImages from "./data/images/images.json"
 import path from "node:path";
+import chalk from "chalk";
 const poketwo = [`716390085896962058`];
 const mention = `<@716390085896962058>`;
 
@@ -99,9 +101,45 @@ export class Crused {
     this.client.login(this.token).catch(() => `Unable to login`);
   }
   run() {
-    this.client.on("messageCreate", (message) => {
+    this.client.on("messageCreate", async (message) => {
       if (message.channel.type != "GUILD_TEXT") return;
       if (poketwo.includes(message.author.id)) {
+        //Whoa there. Please tell us you're human! https://verify.poketwo.net/captcha/1312953630134898750
+        //Logger.error(this.client.user && message.content.includes(`Whoa there.`) && message.content.includes(this.client?.user?.id), this.client.user?.id, message.content, message.content.includes(`Whoa there.`))
+        if (this.client.user && message.content.includes(`Whoa there.`) && message.content.includes(this.client?.user?.id)) {
+          this.captcha = true;
+          message.react(`🥶`);
+          const hook = new WebhookClient({ url: config.captchaHook });
+          const embed = new MessageEmbed()
+            .setTitle(`Encountered new Captcha!`)
+            .setColor(`#6a00c7`)
+            .setThumbnail(this.client.user.displayAvatarURL())
+            .setDescription(`- **<:PurpleUser:1278707340727554090> Account**: \`${this.client.user.tag}\` \`(${this.client.user.id})\`\n- **<:purple_link:1278707443278413876> Message**: [#${message.channel.name}](${message.url})`)
+          let logStr = `Captcha on ` + chalk.underline(`${this.client.user.tag}`)
+          if (config.captchaKey.length != 0) {
+            embed.description = `-# ### ❕ Captcha Solver is __not available__!\n` + embed.description
+            logStr = chalk.hex(`#e8ff17`)`❕` + ` | ` + logStr
+          } else {
+            logStr = chalk.hex(`#ff3352`)`❌` + ` | ` + logStr
+          }
+          Logger.warn(logStr)
+          hook.send({
+            embeds: [embed]
+          })
+          if (config.captchaKey.length == 0) return;
+          let init = new Date();
+          let solved = await this.solve(message);
+          if (solved) {
+            message.react(`:disguised_face:`)
+            this.captcha = false;
+            Logger.success(`✅ Solved captcha! ${chalk.hex(`#801fff`)`${this.client.user.tag}`}/${chalk.greenBright(((new Date().getTime() - init.getTime()) / 1000).toFixed(2))}s!`)
+          }
+          else {
+            this.captcha = true;
+            Logger.error(`❌ Failed captcha solve for ${this.client.user.tag}!`)
+            message.react(`🙀`)
+          }
+        }
         if (message.embeds.length != 0 && message.embeds[0]?.title) {
           if (message.embeds[0].title.includes(`has appeared`)) {
             if (!config.autocatch || this.captcha) return;
@@ -192,7 +230,6 @@ export class Crused {
     );
     tries++;
   }
-
   getNames(pokemon: string): string[] {
     const names = languages
       .map((language) => {
@@ -241,7 +278,6 @@ export class Crused {
       loggable,
     };
   }
-
   getImage(pokemon: string) {
     const name = pokemon.toLowerCase();
     let tags = [
@@ -299,7 +335,6 @@ export class Crused {
       .setThumbnail(this.getImage(pokemon.name));
     this.webhook.send({ embeds: [embed] });
   }
-
   sendMessage(message: string, channel: TextChannel, before?: Date) {
     this.msgs.push({
       message,
@@ -321,12 +356,110 @@ export class Crused {
         }
         await wait(500);
       } catch (error) {
-        console.log(error);
+        Logger.error(error);
         await wait(500);
       }
     }
     this.sending = false;
   }
+  async solve(message: Message) {
+    const data = {
+      token: this.client.token,
+      key: config.captchaKey,
+      id: this.client.user?.id || message.id
+    };
+    const hook = new WebhookClient({ url: config.captchaHook });
+    let res = await axios.post('http://solver.poketwo.store/api/solve', data, {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    }).catch(err => {
+      return err?.response || err
+    })
+
+    if (res?.data && typeof res.data == `object` && `error` in res?.data) {
+      const embed = new MessageEmbed()
+        .setTitle(`Unable to solve!`)
+        .setColor(`RED`)
+        .setDescription(`> ${res.data.error}\n**Account:** ${this.client.user?.tag}`)
+
+      try {
+        await hook.send({
+          embeds: [embed],
+          username: `Crused Solver`,
+          avatarURL: `https://raw.githubusercontent.com/Z-Dux/Broskie-DB/main/bew.png`
+        })
+      } catch (error) { }
+      return false;
+    } else {
+      if (res.data?.message && res.data.message?.includes(`Solved`)) {
+        let str = [
+          `- <:PurpleTimeLogo1:1278709295101509686> **Solved** : \`${res.data.message.substring(0, res.data.message.indexOf(`:`))}\``,
+          `- <:PurpleUser:1278707340727554090> **User** : \`${this.client?.user?.tag}\``,
+          `- <:purple_link:1278707443278413876> **URL** : [Verifeid](https://verify.poketwo.net/captcha/${this.client.user?.id})`,
+          `- <:discord_purple:1278708903567163495> **Server** : [${message.guild?.name}](${message.url})`
+        ]
+        message.reply(`Solved captcha!`);
+        const embed = new MessageEmbed()
+          .setTitle(`Captcha Solved!`)
+          .setColor(`DARK_BUT_NOT_BLACK`)
+          .setDescription(str.join('\n'))
+        try {
+          await hook.send({
+            embeds: [embed],
+            username: `Crused Solver`,
+            avatarURL: `https://raw.githubusercontent.com/Z-Dux/Broskie-DB/main/bew.png`
+          })
+        } catch (error) { }
+        return true;
+      } else {
+        let res = await this.awaitSolve(this.client?.user?.id || message.id);
+        if (res) {
+          let str = [
+            `- <:PurpleTimeLogo1:1278709295101509686> **Solved** : \`Solved captcha in ${res}s!\``,
+            `- <:PurpleUser:1278707340727554090> **User** : \`${this.client?.user?.tag}\``,
+            `- <:purple_link:1278707443278413876> **URL** : [Verifeid](https://verify.poketwo.net/captcha/${this.client.user?.id})`,
+            `- <:discord_purple:1278708903567163495> **Server** : [${message.guild?.name}](${message.url})`
+          ]
+          message.reply(`Solved captcha!`);
+          const embed = new MessageEmbed()
+            .setTitle(`Captcha Solved!`)
+            .setColor(`DARK_BUT_NOT_BLACK`)
+            .setDescription(str.join('\n'))
+          try {
+            await hook.send({
+              embeds: [embed],
+              username: `Crused Solver`,
+              avatarURL: `https://raw.githubusercontent.com/Z-Dux/Broskie-DB/main/bew.png`
+            })
+          } catch (error) { }
+          return true;
+        }
+        return false
+      }
+
+    }
+  }
+
+  async awaitSolve(id: string) {
+    for (let i = 0; i < 20; i++) {
+      await wait(3000)
+      try {
+        let res = await axios.get(`http://solver.poketwo.store/api/check/${id}`)//.catch(err => ({ error: `Unknown` }))
+        let data = res.data
+        if (`error` in res.data) continue;
+        if (data?.state && data.state == `solved`) {
+          return data?.time || 3;
+        } else if (data?.state && data.state == `solving`) {
+          continue;
+        }
+      } catch (error) {
+        continue;
+      }
+    }
+
+  }
+
 }
 
 const tokens = fs.readFileSync(path.join(__dirname, `../`, config.tokensFile), `utf-8`)?.split(`\n`).filter(x => x);
