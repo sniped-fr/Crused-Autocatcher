@@ -209,8 +209,6 @@ interface Stats {
     failed: number;
   };
   uptime: Date;
-  incenses: number;
-  totalIncenses: number;
   suspensions: number;
   pokecoins: number
 }
@@ -224,8 +222,6 @@ export const stats: Stats = {
     failed: 0
   },
   uptime: new Date(),
-  incenses: 0,
-  totalIncenses: 0,
   suspensions: 0,
   pokecoins: 0
 }
@@ -234,8 +230,8 @@ export class Logger {
   private static getTimestamp(): string {
     return moment().format("HH:mm:ss"); // Only hour:minute:second
   }
-  public static info(message: string | object | any): void {
-    this.log("INFO", message, chalk.cyan);
+  public static info(...message: string[] | object[] | any): void {
+    this.log("INFO", message.join(" "), chalk.cyan);
   }
   public static warn(message: string | object | any[]): void {
     this.log("WARN", message, chalk.magenta);
@@ -263,26 +259,34 @@ export class Logger {
       formattedMessage = message;
     }
     errorLogBox.insertBottom(colorFn(
-      `[${level}]`.padEnd(6, ` `) + ` [${timestamp}] - ${formattedMessage}`
+      `[${level}]`.padEnd(6, ` `) + ` [${timestamp}] ${formattedMessage}`
     ))
   }
   static updateStats() {
     const lines = [
       chalk.hex(`#00aeff`)(`  Catches   ${chalk.magenta(pokeList.total.toLocaleString())}`),
-      chalk.hex(`#00aeff`)(`  Balance   ${chalk.magenta(pokeList.pc)}`),
+      chalk.hex(`#00aeff`)(`  Balance   ${chalk.magenta(pokeList.pc.toLocaleString())}`),
       chalk.hex(`#00aeff`)(`  Net. Bal  ${chalk.hex(`#4b0382`)(`${stats.pokecoins.toLocaleString()}`)}`),
       chalk.hex(`#ff622e`)(`  Legendaries  ${chalk.hex(`#ffff2e`)(pokeList.rares.leg.toLocaleString())}`),
       chalk.hex(`#ff622e`)(`  Mythics      ${chalk.hex(`#ffff2e`)(pokeList.rares.myth.toLocaleString())}`),
       chalk.hex(`#ff622e`)(`  Ultra Beasts ${chalk.hex(`#ffff2e`)(pokeList.rares.ub.toLocaleString())}`),
       chalk.hex(`#6f00ff`)(`  Events    ${chalk.hex(`#ad1fff`)(pokeList.rares.ev.toLocaleString())}`),
       chalk.hex(`#6f00ff`)(`  Regionals ${chalk.hex(`#ad1fff`)(pokeList.rares.reg.toLocaleString())}`),
-    ]
+    ];
+    let incense = {
+      total: -crusers.length,
+      active: -crusers.length
+    }
+    crusers.forEach(cr => {
+      incense.total += cr.stats.incense.total.length;
+      incense.active += cr.stats.incense.active.length;
+    })
     const logs = [
       chalk.hex(`#2b2b2b`)(`       [${new Date().toLocaleTimeString()}]`),
       `Accounts  :  ${chalk.greenBright(stats.connected)}/${chalk.green(stats.tokens)}`,
       `Uptime    :  ${(getTimeGap(stats.uptime))}`,
       `Captcha\n` + chalk.grey(` (${chalk.cyanBright(`T`)}/${chalk.greenBright(`S`)}/${chalk.red(`F`)}) `) + chalk.grey(` :  ${chalk.cyan(stats.captchas.encountered)}/${chalk.green(stats.captchas.solved)}/${chalk.red(stats.captchas.failed)}`),
-      `Incenses  :  ${chalk.magenta(stats.incenses)} ${chalk.hex(`#4b0382`)(`(T/${stats.totalIncenses})`)}`,
+      `Incenses  :  ${chalk.magenta(incense.active)} ${chalk.hex(`#4b0382`)(`(T./${incense.total})`)}`,
       `Suspended :  ${chalk.hex(`#ff0000`)(stats.suspensions)}`,
     ];
     statsBox.setContent(chalk.hex(`#9d00ff`)(logs.join(`\n`)))
@@ -332,7 +336,7 @@ export class Logger {
       label: `Regular`
     };
     if (pokemon.shiny) rarTag.color = chalk.yellowBright;
-    basicLogBox.insertBottom(chalk.green(`[${this.getTimestamp()}]`) + ` ${(rarTag?.color((`${pokemon.shiny ? `✨ ` : ``}` + pokemon.name).padEnd(10, ` `)))} ${chalk.hex(`#42f55d`)(`│`)} ${chalk.hex(`#ddff00`)(pokemon.level.toString().padStart(2))} ${chalk.hex(`#ddff00`)(`│`)} ${chalk.hex(`#ddff00`)(`${pokemon.iv.toString().padStart(5)}%`)} ${chalk.hex(`#42f55d`)(`│`)} ` + chalk.grey(`#${message.channel.name}`))
+    basicLogBox.insertBottom(chalk.green(`[${this.getTimestamp()}]`) + ` ${(rarTag?.color((`${pokemon.shiny ? `✨ ` : ``}` + pokemon.name).padEnd(10, ` `)))} ${chalk.hex(`#42f55d`)(`│`)} ${chalk.hex(`#ddff00`)(pokemon.level.toString().padStart(2))} ${chalk.hex(`#ddff00`)(`│`)} ${chalk.hex(`#ddff00`)(`${pokemon.iv.toString().padStart(5)}%`)} ${chalk.hex(`#42f55d`)(`│`)} ` + chalk.grey(`#...${message.channel.name.substring(message.channel.name.length-4)}`))
   }
 }
 

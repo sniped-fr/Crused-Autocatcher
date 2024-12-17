@@ -1,5 +1,6 @@
 import {
   Client,
+  Guild,
   Message,
   MessageEmbed,
   TextChannel,
@@ -72,6 +73,7 @@ export class Crused {
   msgs: { message: string; channel: TextChannel; before?: Date }[] = [];
   sending: boolean = false;
   captcha: boolean = false;
+  shardFlag: Date = new Date(`1-1-2000`);
   stats = {
     catches: 0,
     legendary: 0,
@@ -81,7 +83,12 @@ export class Crused {
     event: 0,
     iv: 0,
     shiny: 0,
-    balance: 0
+    balance: 0,
+    shards: 0,
+    incense: {
+      total: [``],
+      active: [``]
+    }
   };
   count: number = ++tokenCounter;
   webhook: WebhookClient;
@@ -143,6 +150,32 @@ export class Crused {
         if (message.embeds.length != 0 && message.embeds[0]?.title) {
           if (message.embeds[0].title.includes(`has appeared`)) {
             if (!config.autocatch || this.captcha) return;
+            if (message.guild && message.embeds[0].footer && message.embeds[0].footer?.text?.includes(`Spawns`)) {
+              let spawnStr = message.embeds[0].footer.text.split(`\n`).find(x => x.includes(`Spawns`))
+              const spawns = parseInt(spawnStr?.split(' ')[2].replace(`.`, ``) || ``)
+              //`spam` | `incense` | `beast` | `eco`
+              if (!this.stats.incense.active.includes(message.channelId)) this.stats.incense.active.push(message.channelId)
+              if (!this.stats.incense.total.includes(message.channelId)) this.stats.incense.total.push(message.channelId)
+              if (spawns == 0) {
+                this.stats.incense.active.splice(this.stats.incense.active.indexOf(message.channelId), 1);
+                if (config.mode == `beast`) {
+                  //Check quests
+                }
+                if (config.mode == `incense` || config.mode == `beast`) {
+                  if (new Date().getTime() - this.shardFlag.getTime() > 1000 * 60) {
+                    let bal = (await this.getBal(message.channel))
+                    let shards = config.incense.atOnce * 1;
+                    if (bal?.shards) shards -= bal.shards;
+                    shards = Math.max(0, shards)
+                    if (shards != 0) {
+                      let purchased = await this.buyShards(shards, message.channel);
+                      if (!purchased) Logger.error(`Shards not bought for ${this.client.user?.tag}!`)
+                    }
+                    this.buyIncense(message.guild);
+                  }
+                }
+              }
+            }
             const spawned = new Date();
             this.sendMessage(
               `${mention} ${randomBin([`hint`, `h`])}`,
@@ -158,6 +191,72 @@ export class Crused {
         }
       }
     });
+  }
+  async buyIncense(guild: Guild) {
+    const sendableChannels = guild.channels.cache.filter(x => x.type == `GUILD_TEXT` && !x.isThreadOnly());
+    const incenseChannels = sendableChannels.filter(x => x.name.startsWith(`incense`)).filter(X => X)
+    const spawnChannels = sendableChannels.filter(x => x.name.startsWith(`spawn`)).filter(X => X)
+    const spamChannels = sendableChannels.filter(x => x.name.startsWith(`spam`)).filter(X => X)
+
+    const channels = [...new Set([...incenseChannels.values(), ...spawnChannels.values(), ...spamChannels.values(), ...sendableChannels.values()])];
+
+    for (let i = 0; i < config.incense.atOnce; i++) {
+      this.sendMessage(`<@${poketwo[0]}> incense buy 1h 20s --confirm`, channels[i] as TextChannel)
+    }
+  }
+  async buyShards(amount: number, channel: TextChannel) {
+    await channel.send(`<@${poketwo[0]}> buy shards ${amount}`);
+    //Are you sure you want to exchange **200** Pokécoins for **1** shards? Shards are non-transferable and non-refundable!
+    const p2filter = (f: Message) =>
+      f.embeds && f.content.includes(`exchange`) && f.content.includes(`Shards`) && poketwo.includes(f.author.id);
+    let msg = (
+      await channel.awaitMessages({
+        filter: p2filter,
+        time: 10_000,
+        max: 1,
+      })
+    ).first();
+    if ((msg?.components?.length || 0) > 0) {
+      let purchased = false;
+      while (!purchased) {
+        try {
+          let c = await msg?.clickButton()
+          if (c) purchased = true;
+        } catch (error) {
+          await wait(5000);
+        }
+      }
+      Logger.warn(`Purchased ${amount} S$ | ${this.client.user?.tag}!`)
+      return true;
+    }
+    else return false;
+  }
+  async getBal(channel: TextChannel) {
+    await channel.send(`<@${poketwo[0]}> bal`);
+    const p2filter = (f: Message) =>
+      f.embeds && f.embeds.length > 0 && poketwo.includes(f.author.id);
+    let msg = (
+      await channel.awaitMessages({
+        filter: p2filter,
+        time: 2000,
+        max: 1,
+      })
+    ).first();
+    if (msg && `embeds` in msg && msg.embeds.length > 0 && msg.embeds[0]?.title?.includes(`balance`) && msg.embeds[0]?.fields?.length > 0) {
+      let rawBal = msg.embeds[0]?.fields[0]?.value;
+      let rawShards = msg.embeds[0]?.fields[1]?.value;
+      const bal = parseInt(rawBal?.replace(/,/g, ""));
+      const shards = parseInt(rawShards?.replace(/,/g, ""));
+      if (!isNaN(bal) && !isNaN(shards)) {
+        this.stats.balance = bal
+        return {
+          bal,
+          shards
+        }
+      };
+      Logger.info(`Updated ${this.client.user?.tag}'s balance ${chalk.cyanBright(bal.toLocaleString())} PC!`)
+    }
+    else return;
   }
   catchPokemon(pokemons: string[], channel: TextChannel) {
     const maxTries = 2;
@@ -202,7 +301,7 @@ export class Crused {
                 this.stats.balance = bal
                 pokeList.pc += bal;
               };
-              Logger.info(`Updated ${this.client.user?.tag}'s balance ${bal.toLocaleString()} PC!`)
+              Logger.info(`Updated ${this.client.user?.tag}'s balance ${chalk.cyanBright(bal.toLocaleString())} PC!`)
             }
           }
         }
@@ -440,7 +539,6 @@ export class Crused {
 
     }
   }
-
   async awaitSolve(id: string) {
     for (let i = 0; i < 20; i++) {
       await wait(3000)
