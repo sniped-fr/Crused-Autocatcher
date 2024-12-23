@@ -105,7 +105,7 @@ export class Crused {
       Logger.success(`Logged in as ${this.client?.user?.tag}!`);
       stats.connected++;
     });
-    this.client.login(this.token).catch(() => `Unable to login`);
+    this.client.login(this.token.trim()).catch(() => `Unable to login`);
   }
   run() {
     this.client.on("messageCreate", async (message) => {

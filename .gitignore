@@ -121,6 +121,7 @@ dist
 
 # Stores VSCode versions used for testing VSCode extensions
 .vscode-test
+.vscode
 
 # yarn v2
 .yarn/cache
@@ -131,3 +132,10 @@ dist
 
 config.json
 tokens.txt
+
+.idx/
+*.nix
+dev.*
+dev.nix
+
+event.ts

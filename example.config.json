@@ -1,6 +1,5 @@
 {
     "autocatch": true,
-    "token": "",
     "webhook": "",
     "tokensFile": "tokens.txt",
     "captchaHook": "",
