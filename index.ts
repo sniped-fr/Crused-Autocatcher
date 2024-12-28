@@ -137,7 +137,6 @@ export class Crused {
           let init = new Date();
           let solved = await this.solve(message);
           if (solved) {
-            message.react(`:disguised_face:`)
             this.captcha = false;
             Logger.success(`✅ Solved captcha! ${chalk.hex(`#801fff`)`${this.client.user.tag}`}/${chalk.greenBright(((new Date().getTime() - init.getTime()) / 1000).toFixed(2))}s!`)
           }
