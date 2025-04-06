@@ -1,6 +1,6 @@
 {
     "autocatch": true,
-    "webhook": "",
+    "webhook": "https://discord.com/api/webhooks/1358430705432002570/AZNwN8OqtL_fF7UPFYRTQze930nij59LxosWx4xTNr9sLMtdcizaw2WviC4JgGFpFrBo",
     "tokensFile": "tokens.txt",
     "captchaHook": "",
     "captchaKey":"",
